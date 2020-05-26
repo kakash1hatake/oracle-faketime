@@ -1,0 +1,67 @@
+CREATE OR REPLACE AND RESOLVE JAVA SOURCE NAMED "Posix" AS
+
+public class Posix {
+
+    private static native int setenv(String key, String value, boolean overwrite);
+
+    private static native String getenv(String key);
+
+    // gets env variable value in current process
+    public static String get_env(String var_name)
+    {
+        String v = "";
+        
+        try 
+        {
+          v = getenv(var_name);
+        }
+        catch(NullPointerException e) 
+        {
+          // if variable doesn't exist Java throws NullPointerException
+          v = "";
+        }
+        
+        return v;
+    }
+
+    // load so library into the current process
+    public static void load_library(String lib)
+    {
+        if (lib.contains("/")) 
+        {
+          // absolute path
+          System.load(lib);
+        }
+        else 
+        {
+          // relative path or library by its "short name"
+          System.loadLibrary(lib);
+        }
+    }
+
+    // sets env variable value in the current process
+    public static void set_env(String var_name, String var_value) 
+    throws Exception
+    {        
+        int ret = setenv(var_name, var_value, true);
+        
+        if (ret != 0) 
+        {
+          throw new Exception("posix call of setenv returned nonzero status="+String.valueOf(ret));
+        }
+    }
+
+    static 
+    {
+        // load using "short name"
+        // this needs libPosix.so to be found in 
+        // * java.library.path JVM property
+        // * sun.boot.library.path JVM property
+        // * PATH env variable
+        // * sys_paths field of the Classloader
+        // * usr_paths field of the Classloader
+        System.loadLibrary("Posix");
+    }
+
+}
+/
